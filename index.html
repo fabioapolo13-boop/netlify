@@ -553,6 +553,54 @@
         </header>
 
         <div class="content">
+            <!-- Seção de Configuração de Certificado -->
+            <div class="section">
+                <h2 class="section-title">🔐 Configuração de Certificado Digital</h2>
+                
+                <div id="alertCertificado"></div>
+
+                <div id="uploadCertificado">
+                    <div class="alert alert-info">
+                        <strong>⚠️ Importante:</strong> Para consultar notas fiscais no Emissor Nacional, é necessário um certificado digital A1 ou A3 (formato .pfx ou .p12).
+                    </div>
+
+                    <div class="grid">
+                        <div class="form-group">
+                            <label for="certificadoFile">Arquivo do Certificado (.pfx ou .p12)</label>
+                            <input type="file" id="certificadoFile" accept=".pfx,.p12" style="padding: 10px;">
+                        </div>
+                        <div class="form-group">
+                            <label for="certificadoSenha">Senha do Certificado</label>
+                            <input type="password" id="certificadoSenha" placeholder="Digite a senha do certificado" autocomplete="new-password">
+                        </div>
+                    </div>
+
+                    <button class="btn btn-primary" onclick="uploadCertificado()">
+                        🔓 Carregar Certificado
+                    </button>
+
+                    <div id="loadingCertificado" class="loading">
+                        <div class="spinner"></div>
+                        <p style="margin-top: 10px;">Validando certificado...</p>
+                    </div>
+                </div>
+
+                <div id="certificadoAtivo" style="display: none;">
+                    <div class="alert alert-success">
+                        <strong>✅ Certificado Carregado com Sucesso!</strong>
+                        <div style="margin-top: 10px;">
+                            <div><strong>CNPJ:</strong> <span id="certCNPJ"></span></div>
+                            <div><strong>Titular:</strong> <span id="certNome"></span></div>
+                            <div><strong>Validade:</strong> <span id="certValidade"></span></div>
+                        </div>
+                    </div>
+                    
+                    <button class="btn btn-danger" onclick="removerCertificado()">
+                        🔒 Remover Certificado
+                    </button>
+                </div>
+            </div>
+
             <!-- Seção de Cadastro de CNPJ -->
             <div class="section">
                 <h2 class="section-title">📝 Cadastrar Empresa</h2>
@@ -753,10 +801,177 @@
         const mesAtual = hoje.toISOString().slice(0, 7);
         document.getElementById('mesAno').value = mesAtual;
 
+        // ============================================================================
+        // FUNÇÕES DE CERTIFICADO DIGITAL
+        // ============================================================================
+
+        // Upload de certificado
+        async function uploadCertificado() {
+            const fileInput = document.getElementById('certificadoFile');
+            const senha = document.getElementById('certificadoSenha').value;
+            const loading = document.getElementById('loadingCertificado');
+            
+            if (!fileInput.files[0]) {
+                mostrarAlertaCertificado('Por favor, selecione um arquivo de certificado.', 'danger');
+                return;
+            }
+            
+            if (!senha) {
+                mostrarAlertaCertificado('Por favor, informe a senha do certificado.', 'danger');
+                return;
+            }
+
+            loading.style.display = 'block';
+
+            try {
+                const formData = new FormData();
+                formData.append('certificado', fileInput.files[0]);
+                formData.append('senha', senha);
+
+                const response = await fetch(`${API_BASE_URL}/certificado/upload`, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const resultado = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(resultado.erro || 'Erro ao carregar certificado');
+                }
+
+                // Armazenar sessão
+                sessaoCertificado = resultado.sessaoId;
+                dadosCertificado = resultado.certificado;
+                
+                sessionStorage.setItem('sessaoCertificado', sessaoCertificado);
+                sessionStorage.setItem('dadosCertificado', JSON.stringify(dadosCertificado));
+
+                // Exibir certificado ativo
+                exibirCertificadoAtivo();
+                
+                mostrarAlertaCertificado('Certificado carregado com sucesso! Agora você pode consultar notas fiscais.', 'success');
+
+            } catch (error) {
+                mostrarAlertaCertificado('Erro ao carregar certificado: ' + error.message, 'danger');
+            } finally {
+                loading.style.display = 'none';
+            }
+        }
+
+        // Exibir certificado ativo
+        function exibirCertificadoAtivo() {
+            if (!dadosCertificado) return;
+
+            document.getElementById('uploadCertificado').style.display = 'none';
+            document.getElementById('certificadoAtivo').style.display = 'block';
+            
+            document.getElementById('certCNPJ').textContent = formatarCNPJ(dadosCertificado.cnpj);
+            document.getElementById('certNome').textContent = dadosCertificado.nome;
+            
+            const validade = new Date(dadosCertificado.validade);
+            document.getElementById('certValidade').textContent = validade.toLocaleDateString('pt-BR');
+        }
+
+        // Remover certificado
+        function removerCertificado() {
+            if (!confirm('Tem certeza que deseja remover o certificado? Você não poderá consultar notas até carregar novamente.')) {
+                return;
+            }
+
+            sessaoCertificado = null;
+            dadosCertificado = null;
+            
+            sessionStorage.removeItem('sessaoCertificado');
+            sessionStorage.removeItem('dadosCertificado');
+
+            document.getElementById('uploadCertificado').style.display = 'block';
+            document.getElementById('certificadoAtivo').style.display = 'none';
+            document.getElementById('certificadoFile').value = '';
+            document.getElementById('certificadoSenha').value = '';
+
+            mostrarAlertaCertificado('Certificado removido. Faça upload novamente quando necessário.', 'info');
+        }
+
+        // Mostrar alerta do certificado
+        function mostrarAlertaCertificado(mensagem, tipo) {
+            const container = document.getElementById('alertCertificado');
+            container.innerHTML = `
+                <div class="alert alert-${tipo}">
+                    ${mensagem}
+                </div>
+            `;
+
+            setTimeout(() => {
+                container.innerHTML = '';
+            }, 5000);
+        }
+
+        // ============================================================================
+        // FUNÇÕES DE INTEGRAÇÃO COM API EMISSOR NACIONAL
+        // ============================================================================
+
+        // Fazer requisição autenticada
+        async function fazerRequisicaoAPI(endpoint, metodo = 'GET', corpo = null) {
+            if (!sessaoCertificado) {
+                throw new Error('Certificado digital não carregado. Por favor, faça upload do certificado.');
+            }
+
+            const opcoes = {
+                method: metodo,
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Sessao-Id': sessaoCertificado
+                }
+            };
+
+            if (corpo && metodo !== 'GET') {
+                opcoes.body = JSON.stringify(corpo);
+            }
+
+            const response = await fetch(`${API_BASE_URL}${endpoint}`, opcoes);
+            const resultado = await response.json();
+
+            if (!response.ok) {
+                // Se erro de autenticação, limpar sessão
+                if (response.status === 401) {
+                    removerCertificado();
+                }
+                throw new Error(resultado.erro || `Erro HTTP ${response.status}`);
+            }
+
+            return resultado;
+        }
+
+        // Buscar notas reais da API
+        async function buscarNotasReais(cnpj, mesAno) {
+            const [ano, mes] = mesAno.split('-');
+            
+            // Obter código do município (você pode armazenar isso no cadastro da empresa)
+            const codigoMunicipio = '3304557'; // Exemplo: Rio de Janeiro - ajustar conforme necessário
+            
+            const resultado = await fazerRequisicaoAPI('/notas/buscar', 'POST', {
+                cnpj: cnpj.replace(/\D/g, ''),
+                mes: parseInt(mes),
+                ano: parseInt(ano),
+                codigoMunicipio: codigoMunicipio
+            });
+
+            return resultado.notas || [];
+        }
+
+        // ============================================================================
+        // FIM FUNÇÕES DE CERTIFICADO
+        // ============================================================================
+
         // Banco de dados local (localStorage)
         let empresas = JSON.parse(localStorage.getItem('empresas')) || [];
         let notasCache = JSON.parse(localStorage.getItem('notasCache')) || {};
         let notasCarregadas = []; // Armazena as notas da consulta atual para filtros
+        
+        // Configuração da API e Certificado
+        const API_BASE_URL = 'http://localhost:3000/api'; // Alterar para seu servidor em produção
+        let sessaoCertificado = sessionStorage.getItem('sessaoCertificado') || null;
+        let dadosCertificado = JSON.parse(sessionStorage.getItem('dadosCertificado') || 'null');
 
         // Função para buscar dados do CNPJ
         async function buscarCNPJ() {
@@ -966,16 +1181,40 @@
             document.getElementById('filtroSituacao').value = ''; // Resetar filtro
 
             try {
-                // IMPORTANTE: Aqui você deve implementar a chamada real à API do Emissor Nacional
-                // A documentação fornecida indica que é necessário:
-                // 1. Certificado digital para autenticação
-                // 2. Endpoints específicos do ambiente de produção ou homologação
-                
-                // Simulação de dados (substitua pela chamada real à API)
-                const notasSimuladas = await simularConsultaNotas(cnpj, mesAno);
-                
-                if (notasSimuladas.length === 0) {
+                let notasObtidas;
+
+                // Verificar se tem certificado carregado para usar API real
+                if (sessaoCertificado && dadosCertificado) {
+                    // Validar se CNPJ da empresa corresponde ao do certificado
+                    if (cnpj.replace(/\D/g, '') !== dadosCertificado.cnpj) {
+                        throw new Error('O CNPJ da empresa não corresponde ao CNPJ do certificado digital carregado.');
+                    }
+
+                    // BUSCAR NOTAS REAIS DA API DO EMISSOR NACIONAL
+                    try {
+                        notasObtidas = await buscarNotasReais(cnpj, mesAno);
+                    } catch (apiError) {
+                        // Se erro na API, informar mas oferecer modo simulado
+                        if (confirm(`Erro ao buscar na API do Emissor Nacional: ${apiError.message}\n\nDeseja usar dados simulados para demonstração?`)) {
+                            notasObtidas = await simularConsultaNotas(cnpj, mesAno);
+                        } else {
+                            throw apiError;
+                        }
+                    }
+                } else {
+                    // Modo simulado (demonstração)
                     container.innerHTML = `
+                        <div class="alert alert-info">
+                            <strong>ℹ️ Modo Demonstração</strong><br>
+                            Certificado digital não carregado. Exibindo dados simulados.<br>
+                            Para consultar notas reais, carregue seu certificado digital na seção acima.
+                        </div>
+                    `;
+                    notasObtidas = await simularConsultaNotas(cnpj, mesAno);
+                }
+                
+                if (notasObtidas.length === 0) {
+                    container.innerHTML += `
                         <div class="alert alert-info">
                             Nenhuma nota fiscal encontrada para o período selecionado.
                         </div>
@@ -985,21 +1224,14 @@
                     return;
                 }
 
-                notasCarregadas = notasSimuladas;
+                notasCarregadas = notasObtidas;
                 renderizarNotas(notasCarregadas);
 
             } catch (error) {
                 container.innerHTML = `
                     <div class="alert alert-danger">
-                        Erro ao buscar notas: ${error.message}
-                        <br><br>
-                        <strong>Atenção:</strong> Para integração real com a API do Emissor Nacional NFS-e, 
-                        você precisará configurar:
-                        <ul style="margin-top: 10px; margin-left: 20px;">
-                            <li>Certificado digital A1 ou A3</li>
-                            <li>Credenciais de acesso ao ambiente</li>
-                            <li>URL do endpoint: https://adn.nfse.gov.br</li>
-                        </ul>
+                        <strong>Erro ao buscar notas:</strong> ${error.message}
+                        ${!sessaoCertificado ? '<br><br><strong>Dica:</strong> Carregue seu certificado digital para acessar a API real do Emissor Nacional.' : ''}
                     </div>
                 `;
                 notasCarregadas = [];
@@ -1449,6 +1681,11 @@
         // Inicializar
         renderizarEmpresas();
         atualizarSelectDashboard();
+        
+        // Verificar se já tem certificado carregado
+        if (sessaoCertificado && dadosCertificado) {
+            exibirCertificadoAtivo();
+        }
 
         // Fechar modal ao clicar fora
         window.onclick = function(event) {
