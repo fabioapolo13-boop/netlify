@@ -1,0 +1,933 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gerenciador de Notas Fiscais - NFS-e</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+
+        header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        header h1 {
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+
+        header p {
+            opacity: 0.9;
+            font-size: 14px;
+        }
+
+        .content {
+            padding: 30px;
+        }
+
+        .section {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 25px;
+        }
+
+        .section-title {
+            font-size: 20px;
+            color: #333;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #667eea;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #555;
+            font-weight: 500;
+            font-size: 14px;
+        }
+
+        input, select {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+
+        input:focus, select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #218838;
+            transform: translateY(-2px);
+        }
+
+        .btn-danger {
+            background: #dc3545;
+            color: white;
+            padding: 8px 16px;
+            font-size: 12px;
+        }
+
+        .btn-danger:hover {
+            background: #c82333;
+        }
+
+        .btn-info {
+            background: #17a2b8;
+            color: white;
+        }
+
+        .btn-info:hover {
+            background: #138496;
+            transform: translateY(-2px);
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+        }
+
+        .company-card {
+            background: white;
+            border: 2px solid #e0e0e0;
+            border-radius: 12px;
+            padding: 20px;
+            transition: all 0.3s;
+        }
+
+        .company-card:hover {
+            border-color: #667eea;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .company-card h3 {
+            color: #333;
+            margin-bottom: 15px;
+            font-size: 18px;
+        }
+
+        .company-info {
+            color: #666;
+            font-size: 13px;
+            margin-bottom: 8px;
+        }
+
+        .company-actions {
+            margin-top: 15px;
+            display: flex;
+            gap: 10px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        thead {
+            background: #667eea;
+            color: white;
+        }
+
+        th, td {
+            padding: 12px;
+            text-align: left;
+            font-size: 13px;
+        }
+
+        tbody tr {
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        tbody tr:hover {
+            background: #f8f9fa;
+        }
+
+        .alert {
+            padding: 15px 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-size: 14px;
+        }
+
+        .alert-success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .alert-danger {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .alert-info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .summary-box {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 12px;
+            margin-top: 20px;
+            text-align: center;
+        }
+
+        .summary-box h3 {
+            font-size: 16px;
+            margin-bottom: 10px;
+            opacity: 0.9;
+        }
+
+        .summary-box .value {
+            font-size: 32px;
+            font-weight: bold;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #999;
+        }
+
+        .empty-state svg {
+            width: 80px;
+            height: 80px;
+            margin-bottom: 20px;
+            opacity: 0.3;
+        }
+
+        .filters {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .filter-item {
+            flex: 1;
+            min-width: 200px;
+        }
+
+        @media (max-width: 768px) {
+            .grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .filters {
+                flex-direction: column;
+            }
+            
+            .company-actions {
+                flex-direction: column;
+            }
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            max-width: 600px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #e0e0e0;
+        }
+
+        .modal-header h2 {
+            color: #333;
+            font-size: 22px;
+        }
+
+        .close-modal {
+            background: none;
+            border: none;
+            font-size: 28px;
+            color: #999;
+            cursor: pointer;
+            padding: 0;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .close-modal:hover {
+            color: #333;
+        }
+
+        .info-grid {
+            display: grid;
+            gap: 15px;
+        }
+
+        .info-item {
+            padding: 12px;
+            background: #f8f9fa;
+            border-radius: 6px;
+        }
+
+        .info-item label {
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 5px;
+        }
+
+        .info-item .value {
+            font-size: 14px;
+            color: #333;
+            font-weight: 500;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>📊 Gerenciador de Notas Fiscais NFS-e</h1>
+            <p>Sistema de gestão e consulta de notas fiscais eletrônicas - Emissor Nacional</p>
+        </header>
+
+        <div class="content">
+            <!-- Seção de Cadastro de CNPJ -->
+            <div class="section">
+                <h2 class="section-title">📝 Cadastrar Empresa</h2>
+                
+                <div id="alertContainer"></div>
+
+                <div class="form-group">
+                    <label for="cnpjInput">CNPJ da Empresa</label>
+                    <input type="text" id="cnpjInput" placeholder="00.000.000/0000-00" maxlength="18">
+                </div>
+
+                <button class="btn btn-primary" onclick="buscarCNPJ()">
+                    🔍 Buscar Dados da Empresa
+                </button>
+
+                <div id="loadingCNPJ" class="loading">
+                    <div class="spinner"></div>
+                    <p style="margin-top: 10px;">Buscando dados...</p>
+                </div>
+
+                <div id="companyForm" style="display: none; margin-top: 25px;">
+                    <div class="grid">
+                        <div class="form-group">
+                            <label for="razaoSocial">Razão Social</label>
+                            <input type="text" id="razaoSocial">
+                        </div>
+                        <div class="form-group">
+                            <label for="nomeFantasia">Nome Fantasia</label>
+                            <input type="text" id="nomeFantasia">
+                        </div>
+                    </div>
+
+                    <div class="grid">
+                        <div class="form-group">
+                            <label for="email">E-mail</label>
+                            <input type="email" id="email">
+                        </div>
+                        <div class="form-group">
+                            <label for="telefone">Telefone</label>
+                            <input type="text" id="telefone">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="endereco">Endereço Completo</label>
+                        <input type="text" id="endereco">
+                    </div>
+
+                    <button class="btn btn-success" onclick="salvarEmpresa()">
+                        💾 Salvar Empresa
+                    </button>
+                </div>
+            </div>
+
+            <!-- Seção de Empresas Cadastradas -->
+            <div class="section">
+                <h2 class="section-title">🏢 Empresas Cadastradas</h2>
+                
+                <div id="companiesList" class="grid">
+                    <div class="empty-state">
+                        <svg fill="#ccc" viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>
+                        <p>Nenhuma empresa cadastrada ainda</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Seção de Consulta de Notas -->
+            <div class="section" id="notasSection" style="display: none;">
+                <h2 class="section-title">🧾 Notas Fiscais</h2>
+                
+                <div class="filters">
+                    <div class="filter-item">
+                        <label>Empresa Selecionada</label>
+                        <input type="text" id="empresaSelecionada" readonly>
+                    </div>
+                    <div class="filter-item">
+                        <label>Mês/Ano</label>
+                        <input type="month" id="mesAno">
+                    </div>
+                    <div class="filter-item" style="display: flex; align-items: flex-end;">
+                        <button class="btn btn-info" onclick="buscarNotas()">
+                            📥 Buscar Notas
+                        </button>
+                    </div>
+                </div>
+
+                <div id="loadingNotas" class="loading">
+                    <div class="spinner"></div>
+                    <p style="margin-top: 10px;">Consultando notas fiscais...</p>
+                </div>
+
+                <div id="notasContainer"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Detalhes da Nota -->
+    <div id="notaModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Detalhes da Nota Fiscal</h2>
+                <button class="close-modal" onclick="fecharModal()">&times;</button>
+            </div>
+            <div id="notaDetalhes"></div>
+        </div>
+    </div>
+
+    <script>
+        // Formatar CNPJ
+        document.getElementById('cnpjInput').addEventListener('input', function(e) {
+            let value = e.target.value.replace(/\D/g, '');
+            if (value.length <= 14) {
+                value = value.replace(/^(\d{2})(\d)/, '$1.$2');
+                value = value.replace(/^(\d{2})\.(\d{3})(\d)/, '$1.$2.$3');
+                value = value.replace(/\.(\d{3})(\d)/, '.$1/$2');
+                value = value.replace(/(\d{4})(\d)/, '$1-$2');
+                e.target.value = value;
+            }
+        });
+
+        // Definir mês atual
+        const hoje = new Date();
+        const mesAtual = hoje.toISOString().slice(0, 7);
+        document.getElementById('mesAno').value = mesAtual;
+
+        // Banco de dados local (localStorage)
+        let empresas = JSON.parse(localStorage.getItem('empresas')) || [];
+        let notasCache = JSON.parse(localStorage.getItem('notasCache')) || {};
+
+        // Função para buscar dados do CNPJ
+        async function buscarCNPJ() {
+            const cnpjInput = document.getElementById('cnpjInput').value.replace(/\D/g, '');
+            
+            if (cnpjInput.length !== 14) {
+                mostrarAlerta('Por favor, insira um CNPJ válido com 14 dígitos.', 'danger');
+                return;
+            }
+
+            const loading = document.getElementById('loadingCNPJ');
+            const form = document.getElementById('companyForm');
+            
+            loading.style.display = 'block';
+            form.style.display = 'none';
+
+            try {
+                // Consulta à API da ReceitaWS (gratuita e sem necessidade de autenticação)
+                const response = await fetch(`https://brasilapi.com.br/api/cnpj/v1/${cnpjInput}`);
+                
+                if (!response.ok) {
+                    throw new Error('CNPJ não encontrado');
+                }
+
+                const data = await response.json();
+
+                // Preencher formulário
+                document.getElementById('razaoSocial').value = data.razao_social || data.nome_fantasia || '';
+                document.getElementById('nomeFantasia').value = data.nome_fantasia || '';
+                document.getElementById('email').value = data.email || '';
+                document.getElementById('telefone').value = data.ddd_telefone_1 || '';
+                
+                const endereco = `${data.logradouro || ''}, ${data.numero || ''} - ${data.bairro || ''}, ${data.municipio || ''} - ${data.uf || ''}, CEP: ${data.cep || ''}`;
+                document.getElementById('endereco').value = endereco;
+
+                form.style.display = 'block';
+                mostrarAlerta('Dados da empresa encontrados com sucesso!', 'success');
+
+            } catch (error) {
+                mostrarAlerta('Erro ao buscar CNPJ. Verifique o número e tente novamente.', 'danger');
+                // Mostrar formulário vazio para preenchimento manual
+                limparFormulario();
+                form.style.display = 'block';
+            } finally {
+                loading.style.display = 'none';
+            }
+        }
+
+        // Salvar empresa
+        function salvarEmpresa() {
+            const cnpj = document.getElementById('cnpjInput').value.replace(/\D/g, '');
+            const razaoSocial = document.getElementById('razaoSocial').value;
+            const nomeFantasia = document.getElementById('nomeFantasia').value;
+            const email = document.getElementById('email').value;
+            const telefone = document.getElementById('telefone').value;
+            const endereco = document.getElementById('endereco').value;
+
+            if (!cnpj || !razaoSocial) {
+                mostrarAlerta('CNPJ e Razão Social são obrigatórios!', 'danger');
+                return;
+            }
+
+            // Verificar se já existe
+            const existe = empresas.find(e => e.cnpj === cnpj);
+            if (existe) {
+                mostrarAlerta('Esta empresa já está cadastrada!', 'danger');
+                return;
+            }
+
+            const empresa = {
+                id: Date.now(),
+                cnpj,
+                razaoSocial,
+                nomeFantasia,
+                email,
+                telefone,
+                endereco,
+                dataCadastro: new Date().toISOString()
+            };
+
+            empresas.push(empresa);
+            localStorage.setItem('empresas', JSON.stringify(empresas));
+
+            mostrarAlerta('Empresa cadastrada com sucesso!', 'success');
+            limparFormulario();
+            document.getElementById('companyForm').style.display = 'none';
+            renderizarEmpresas();
+        }
+
+        // Renderizar lista de empresas
+        function renderizarEmpresas() {
+            const container = document.getElementById('companiesList');
+            
+            if (empresas.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <svg fill="#ccc" viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>
+                        <p>Nenhuma empresa cadastrada ainda</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = empresas.map(empresa => `
+                <div class="company-card">
+                    <h3>${empresa.nomeFantasia || empresa.razaoSocial}</h3>
+                    <div class="company-info"><strong>CNPJ:</strong> ${formatarCNPJ(empresa.cnpj)}</div>
+                    <div class="company-info"><strong>Razão Social:</strong> ${empresa.razaoSocial}</div>
+                    ${empresa.email ? `<div class="company-info"><strong>E-mail:</strong> ${empresa.email}</div>` : ''}
+                    ${empresa.telefone ? `<div class="company-info"><strong>Telefone:</strong> ${empresa.telefone}</div>` : ''}
+                    <div class="company-actions">
+                        <button class="btn btn-info" onclick="selecionarEmpresa(${empresa.id})">
+                            📥 Ver Notas
+                        </button>
+                        <button class="btn btn-danger" onclick="excluirEmpresa(${empresa.id})">
+                            🗑️ Excluir
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Selecionar empresa para consulta de notas
+        function selecionarEmpresa(id) {
+            const empresa = empresas.find(e => e.id === id);
+            if (!empresa) return;
+
+            document.getElementById('empresaSelecionada').value = `${empresa.nomeFantasia || empresa.razaoSocial} - ${formatarCNPJ(empresa.cnpj)}`;
+            document.getElementById('empresaSelecionada').dataset.cnpj = empresa.cnpj;
+            document.getElementById('notasSection').style.display = 'block';
+            document.getElementById('notasSection').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        // Buscar notas fiscais
+        async function buscarNotas() {
+            const cnpj = document.getElementById('empresaSelecionada').dataset.cnpj;
+            const mesAno = document.getElementById('mesAno').value;
+
+            if (!cnpj || !mesAno) {
+                mostrarAlerta('Selecione uma empresa e um período!', 'danger');
+                return;
+            }
+
+            const loading = document.getElementById('loadingNotas');
+            const container = document.getElementById('notasContainer');
+
+            loading.style.display = 'block';
+            container.innerHTML = '';
+
+            try {
+                // IMPORTANTE: Aqui você deve implementar a chamada real à API do Emissor Nacional
+                // A documentação fornecida indica que é necessário:
+                // 1. Certificado digital para autenticação
+                // 2. Endpoints específicos do ambiente de produção ou homologação
+                
+                // Simulação de dados (substitua pela chamada real à API)
+                const notasSimuladas = await simularConsultaNotas(cnpj, mesAno);
+                
+                if (notasSimuladas.length === 0) {
+                    container.innerHTML = `
+                        <div class="alert alert-info">
+                            Nenhuma nota fiscal encontrada para o período selecionado.
+                        </div>
+                    `;
+                    loading.style.display = 'none';
+                    return;
+                }
+
+                renderizarNotas(notasSimuladas);
+
+            } catch (error) {
+                container.innerHTML = `
+                    <div class="alert alert-danger">
+                        Erro ao buscar notas: ${error.message}
+                        <br><br>
+                        <strong>Atenção:</strong> Para integração real com a API do Emissor Nacional NFS-e, 
+                        você precisará configurar:
+                        <ul style="margin-top: 10px; margin-left: 20px;">
+                            <li>Certificado digital A1 ou A3</li>
+                            <li>Credenciais de acesso ao ambiente</li>
+                            <li>URL do endpoint: https://adn.nfse.gov.br</li>
+                        </ul>
+                    </div>
+                `;
+            } finally {
+                loading.style.display = 'none';
+            }
+        }
+
+        // Simulação de consulta (substituir pela API real)
+        async function simularConsultaNotas(cnpj, mesAno) {
+            // Simular delay de rede
+            await new Promise(resolve => setTimeout(resolve, 1500));
+
+            // Dados de exemplo
+            const [ano, mes] = mesAno.split('-');
+            const notas = [];
+
+            for (let i = 1; i <= 10; i++) {
+                const dia = String(Math.floor(Math.random() * 28) + 1).padStart(2, '0');
+                notas.push({
+                    numero: `${ano}${mes}${String(i).padStart(6, '0')}`,
+                    chaveAcesso: `${cnpj}${ano}${mes}${String(i).padStart(9, '0')}`,
+                    dataEmissao: `${ano}-${mes}-${dia}`,
+                    valorServicos: (Math.random() * 5000 + 500).toFixed(2),
+                    valorDeducoes: (Math.random() * 200).toFixed(2),
+                    valorLiquido: 0,
+                    tomador: {
+                        razaoSocial: `Cliente Exemplo ${i}`,
+                        cnpj: `${String(Math.floor(Math.random() * 99999999999999)).padStart(14, '0')}`
+                    },
+                    discriminacao: `Serviço prestado - Nota ${i}`,
+                    situacao: Math.random() > 0.1 ? 'Normal' : 'Cancelada'
+                });
+                
+                notas[i-1].valorLiquido = (parseFloat(notas[i-1].valorServicos) - parseFloat(notas[i-1].valorDeducoes)).toFixed(2);
+            }
+
+            return notas;
+        }
+
+        // Renderizar tabela de notas
+        function renderizarNotas(notas) {
+            const container = document.getElementById('notasContainer');
+            
+            const total = notas.reduce((sum, nota) => {
+                return nota.situacao === 'Normal' ? sum + parseFloat(nota.valorLiquido) : sum;
+            }, 0);
+
+            const html = `
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Número</th>
+                            <th>Data Emissão</th>
+                            <th>Tomador</th>
+                            <th>Valor Serviços</th>
+                            <th>Deduções</th>
+                            <th>Valor Líquido</th>
+                            <th>Situação</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${notas.map(nota => `
+                            <tr>
+                                <td>${nota.numero}</td>
+                                <td>${formatarData(nota.dataEmissao)}</td>
+                                <td>${nota.tomador.razaoSocial}</td>
+                                <td>R$ ${formatarMoeda(nota.valorServicos)}</td>
+                                <td>R$ ${formatarMoeda(nota.valorDeducoes)}</td>
+                                <td><strong>R$ ${formatarMoeda(nota.valorLiquido)}</strong></td>
+                                <td>
+                                    <span style="color: ${nota.situacao === 'Normal' ? '#28a745' : '#dc3545'}">
+                                        ${nota.situacao}
+                                    </span>
+                                </td>
+                                <td>
+                                    <button class="btn btn-info" style="padding: 6px 12px; font-size: 11px;" 
+                                            onclick='verDetalhes(${JSON.stringify(nota).replace(/'/g, "&apos;")})'>
+                                        👁️ Ver
+                                    </button>
+                                </td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+
+                <div class="summary-box">
+                    <h3>Total do Período (Notas Normais)</h3>
+                    <div class="value">R$ ${formatarMoeda(total.toFixed(2))}</div>
+                    <p style="margin-top: 10px; opacity: 0.9; font-size: 14px;">
+                        ${notas.filter(n => n.situacao === 'Normal').length} notas válidas de ${notas.length} total
+                    </p>
+                </div>
+            `;
+
+            container.innerHTML = html;
+        }
+
+        // Ver detalhes da nota
+        function verDetalhes(nota) {
+            const modal = document.getElementById('notaModal');
+            const detalhes = document.getElementById('notaDetalhes');
+
+            detalhes.innerHTML = `
+                <div class="info-grid">
+                    <div class="info-item">
+                        <label>Número da Nota</label>
+                        <div class="value">${nota.numero}</div>
+                    </div>
+                    <div class="info-item">
+                        <label>Chave de Acesso</label>
+                        <div class="value" style="font-size: 11px; word-break: break-all;">${nota.chaveAcesso}</div>
+                    </div>
+                    <div class="info-item">
+                        <label>Data de Emissão</label>
+                        <div class="value">${formatarData(nota.dataEmissao)}</div>
+                    </div>
+                    <div class="info-item">
+                        <label>Situação</label>
+                        <div class="value" style="color: ${nota.situacao === 'Normal' ? '#28a745' : '#dc3545'}">
+                            ${nota.situacao}
+                        </div>
+                    </div>
+                    <div class="info-item">
+                        <label>Tomador</label>
+                        <div class="value">${nota.tomador.razaoSocial}</div>
+                        <div style="font-size: 12px; color: #666; margin-top: 5px;">
+                            CNPJ: ${formatarCNPJ(nota.tomador.cnpj)}
+                        </div>
+                    </div>
+                    <div class="info-item">
+                        <label>Discriminação dos Serviços</label>
+                        <div class="value">${nota.discriminacao}</div>
+                    </div>
+                    <div class="info-item">
+                        <label>Valor dos Serviços</label>
+                        <div class="value">R$ ${formatarMoeda(nota.valorServicos)}</div>
+                    </div>
+                    <div class="info-item">
+                        <label>Deduções</label>
+                        <div class="value">R$ ${formatarMoeda(nota.valorDeducoes)}</div>
+                    </div>
+                    <div class="info-item" style="background: #e8f5e9;">
+                        <label>Valor Líquido</label>
+                        <div class="value" style="font-size: 18px; color: #28a745;">
+                            R$ ${formatarMoeda(nota.valorLiquido)}
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            modal.style.display = 'flex';
+        }
+
+        // Fechar modal
+        function fecharModal() {
+            document.getElementById('notaModal').style.display = 'none';
+        }
+
+        // Excluir empresa
+        function excluirEmpresa(id) {
+            if (!confirm('Tem certeza que deseja excluir esta empresa?')) return;
+
+            empresas = empresas.filter(e => e.id !== id);
+            localStorage.setItem('empresas', JSON.stringify(empresas));
+            mostrarAlerta('Empresa excluída com sucesso!', 'success');
+            renderizarEmpresas();
+        }
+
+        // Limpar formulário
+        function limparFormulario() {
+            document.getElementById('cnpjInput').value = '';
+            document.getElementById('razaoSocial').value = '';
+            document.getElementById('nomeFantasia').value = '';
+            document.getElementById('email').value = '';
+            document.getElementById('telefone').value = '';
+            document.getElementById('endereco').value = '';
+        }
+
+        // Mostrar alerta
+        function mostrarAlerta(mensagem, tipo) {
+            const container = document.getElementById('alertContainer');
+            container.innerHTML = `
+                <div class="alert alert-${tipo}">
+                    ${mensagem}
+                </div>
+            `;
+
+            setTimeout(() => {
+                container.innerHTML = '';
+            }, 5000);
+        }
+
+        // Funções auxiliares de formatação
+        function formatarCNPJ(cnpj) {
+            return cnpj.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, '$1.$2.$3/$4-$5');
+        }
+
+        function formatarData(data) {
+            const [ano, mes, dia] = data.split('-');
+            return `${dia}/${mes}/${ano}`;
+        }
+
+        function formatarMoeda(valor) {
+            return parseFloat(valor).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        }
+
+        // Inicializar
+        renderizarEmpresas();
+
+        // Fechar modal ao clicar fora
+        window.onclick = function(event) {
+            const modal = document.getElementById('notaModal');
+            if (event.target === modal) {
+                fecharModal();
+            }
+        }
+    </script>
+</body>
+</html>
